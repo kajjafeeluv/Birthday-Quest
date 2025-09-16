@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chu's Birthday Quest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a1a2e;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .screen-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .game-canvas-container {
+            position: relative;
+            border: 4px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            max-width: 90%;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+            background-color: #3a3a5e;
+        }
+
+        .control-btn {
+            background-color: #ff6347;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.8rem;
+            border-radius: 9999px;
+            text-shadow: 2px 2px 0 #000;
+            box-shadow: 0 4px #d32f2f;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .control-btn:active {
+            box-shadow: 0 1px #d32f2f;
+            transform: translateY(3px);
+        }
+
+        /* Overlay Styles for all screens, ensuring pixel font is used */
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            color: white;
+            padding: 1rem;
+            font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
+        }
+
+        .overlay-title {
+            color: white;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            text-shadow: 4px 4px #000;
+        }
+        .overlay-text {
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px #000;
+        }
+        .character-card {
+            background-color: #2b2b4d;
+            border: 2px solid #fff;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px #1a1a2e;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .character-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px #1a1a2e;
+        }
+        .character-card img {
+            width: 128px;
+            height: 128px;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .steam-pop-up {
+            background-color: #333;
+            border: 4px solid gold;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 90%;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+            text-align: center;
+        }
+        .steam-code {
+            background-color: #1a1a2e;
+            color: #ff6347;
+            padding: 0.5rem 1rem;
+            font-size: 1.25rem;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            border: 2px dashed #ff6347;
+        }
+        /* New Styles for Quest 3 Screen */
+        .quest3-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #1a1a2e;
+            z-index: 20;
+            color: white;
+            overflow: hidden; /* Hide confetti overflow */
+            font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
+        }
+        .quest3-content {
+            background-color: #000;
+            border: 4px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            max-width: 90%;
+            min-height: 50%; /* Only change made */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through */
+            z-index: 19;
+            overflow: hidden;
+        }
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #ff00ff; /* Magenta */
+            animation: fall linear infinite;
+        }
+        .confetti:nth-child(2n) { background-color: #00ffff; }
+        .confetti:nth-child(3n) { background-color: #ffff00; }
+        .confetti:nth-child(4n) { background-color: #ff6347; }
+        .confetti:nth-child(5n) { background-color: #00ff00; }
+        
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotateZ(720deg); opacity: 0; }
+        }
+
+        /* New styles for image-based cake and candles */
+        .cake-container {
+            position: relative;
+            width: 400px;
+            height: auto;
+            margin-top: 2rem;
+        }
+        .cake-container img.cake {
+            width: 100%;
+            height: auto;
+        }
+        .candle-container {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 30%;
+            z-index: 1;
+        }
+        .candle-wrapper {
+            position: absolute;
+            width: 40px;
+            height: 55px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            z-index: 2;
+        }
+        .candle-wrapper .candle {
+            width: 100%;
+            height: 80%;
+            object-fit: contain;
+        }
+        .candle-wrapper .candle-flame {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: flicker 0.4s ease-in-out infinite alternate;
+        }
+        .candle-wrapper.blown .candle-flame {
+            display: none;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.2); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+
+        
+    </style>
+</head>
+<body class="screen-container">
+
+    <div id="gameScreen" class="game-canvas-container">
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+    </div>
+
+    <div id="gameOverlay" class="game-overlay flex">
+        <h2 id="overlayTitle" class="overlay-title">Chu's Birthday Quest</h2>
+        <button id="startButton" class="control-btn text-lg py-2 px-4">PRESS START</button>
+    </div>
+
+<div id="charSelectOverlay" class="game-overlay">
+    <h2 class="overlay-title">Character Selection</h2>
+    <p class="overlay-text">Choose your character for the challenge. Class cannot be changed unless you finish your run.</p>
+    <div class="flex flex-col sm:flex-row justify-center items-stretch">
+        <div id="ranni-card" class="character-card flex-1 flex flex-col">
+            <div>
+                <h3 class="text-xl text-center mb-2">Ranni</h3>
+                <img id="ranni-img" src="https://raw.githubusercontent.com/kajjafeeluv/game-images/main/ranni.PNG" alt="Ranni Character" class="mx-auto my-4 rounded-full border-4 border-yellow-400">
+            </div>
+            <p class="text-xs mt-auto">A sly and intelligent rogue, Ranni is a master of stealth. His high Dexterity allows him to move with silent grace, but his low Strength means he must rely on swift, precise strikes.<span class="text-[#202E54]"> He requires a lot of resources to sustain his powerful blows, but his brute force makes him a powerful and reliable ally in any brawl.</span></p>
+        </div>
+        <div id="poteto-card" class="character-card flex-1 flex flex-col">
+            <div>
+                <h3 class="text-xl text-center mb-2">Poteto</h3>
+                <img id="poteto-img" src="https://raw.githubusercontent.com/kajjafeeluv/game-images/main/poteto.PNG" alt="Poteto Character" class="mx-auto my-4 rounded-full border-4 border-blue-400">
+            </div>
+            <p class="text-xs mt-auto">A mighty and wholesome barbarian, Poteto has unmatched raw power. His Strength makes him a formidable force, able to withstand incredible damage. He requires a lot of resources to sustain his powerful blows, but his brute force makes him a powerful and reliable ally in any brawl.</p>
+        </div>
+    </div>
+</div>
+
+    <div id="quest3Screen" class="quest3-screen">
+    <div class="quest3-content">
+        <h2 class="overlay-title">Congratulations!</h2>
+        <p class="overlay-text">You found the treasure. Blow off the candles to unlock it.</p>
+        
+        <div id="cake-container" class="cake-container">
+            <img id="cake-image" class="cake" alt="Birthday Cake">
+            <div id="candle-container" class="candle-container">
+                </div>
+        </div>
+
+        <div id="mic-prompt" class="mt-4 w-full flex justify-center">
+            <div id="volume-bar" class="h-4 bg-yellow-400 rounded-full transition-all duration-100 ease-out" style="width: 0%;"></div>
+        </div>
+    </div>
+    <div class="confetti-container">
+        <div class="confetti" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="confetti" style="left: 20%; animation-delay: 1.5s;"></div>
+        <div class="confetti" style="left: 30%; animation-delay: 3s;"></div>
+        <div class="confetti" style="left: 40%; animation-delay: 0.5s;"></div>
+        <div class="confetti" style="left: 50%; animation-delay: 2.5s;"></div>
+        <div class="confetti" style="left: 60%; animation-delay: 4s;"></div>
+        <div class="confetti" style="left: 70%; animation-delay: 1s;"></div>
+        <div class="confetti" style="left: 80%; animation-delay: 3.5s;"></div>
+        <div class="confetti" style="left: 90%; animation-delay: 2s;"></div>
+    </div>
+</div>
+
+
+
+    <div id="finalPopup" class="game-overlay hidden">
+        <div class="steam-pop-up flex flex-col items-center">
+            <h2 class="overlay-title text-yellow-400">Happy Birthday, boo!</h2>
+            <p class="overlay-text text-sm">May that kindness, optimism and light in your eyes never fade away. I love you dearly, and I wish you a joyful journey ahead. This is not a mimic, here's your Steam voucher:</p>
+            <div class="steam-code text-xl sm:text-2xl">BT90E-3LPI9-BH8GL</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const gameScreen = document.getElementById('gameScreen');
+
+            const gameOverlay = document.getElementById('gameOverlay');
+            const overlayTitle = document.getElementById('overlayTitle');
+            const startButton = document.getElementById('startButton');
+
+            const charSelectOverlay = document.getElementById('charSelectOverlay');
+            const ranniCard = document.getElementById('ranni-card');
+            const potetoCard = document.getElementById('poteto-card');
+
+            const quest3Screen = document.getElementById('quest3Screen');
+            const volumeBar = document.getElementById('volume-bar');
+            const finalPopup = document.getElementById('finalPopup');
+            
+            // --- Image Assets ---
+            const ranniImage = new Image();
+            ranniImage.src = 'https://raw.githubusercontent.com/kajjafeeluv/game-images/main/ranni.PNG';
+            const potetoImage = new Image();
+            potetoImage.src = 'https://raw.githubusercontent.com/kajjafeeluv/game-images/main/poteto.PNG';
+            
+            const cakeImage = new Image();
+            cakeImage.src = 'https://raw.githubusercontent.com/kajjafeeluv/game-images/main/cake.PNG'; 
+            
+            const candleBodyImage = new Image();
+            candleBodyImage.src = 'https://raw.githubusercontent.com/kajjafeeluv/game-images/main/candle.PNG'; 
+            
+            const candleFlameImage = new Image();
+            candleFlameImage.src = 'https://raw.githubusercontent.com/kajjafeeluv/game-images/main/flame.PNG'; 
+            
+            let imagesLoaded = 0;
+            const totalImages = 5;
+            const characterImages = {};
+
+            function imageLoaded() {
+                imagesLoaded++;
+                if (imagesLoaded === totalImages) {
+                    game.lastUpdate = performance.now();
+                    gameLoop(game.lastUpdate);
+                    showScreen('START_SCREEN');
+                }
+            }
+
+            ranniImage.onload = () => {
+                characterImages.ranni = ranniImage;
+                imageLoaded();
+            };
+            ranniImage.onerror = () => {
+                console.error("Failed to load Ranni image. Using fallback.");
+                characterImages.ranni = null;
+                imageLoaded();
+            };
+
+            potetoImage.onload = () => {
+                characterImages.poteto = potetoImage;
+                imageLoaded();
+            };
+            potetoImage.onerror = () => {
+                console.error("Failed to load Poteto image. Using fallback.");
+                characterImages.poteto = null;
+                imageLoaded();
+            };
+
+            cakeImage.onload = imageLoaded;
+            cakeImage.onerror = () => { console.error("Failed to load cake image."); imageLoaded(); };
+            
+            candleBodyImage.onload = imageLoaded;
+            candleBodyImage.onerror = () => { console.error("Failed to load candle body image."); imageLoaded(); };
+            
+            candleFlameImage.onload = imageLoaded;
+            candleFlameImage.onerror = () => { console.error("Failed to load candle flame image."); imageLoaded(); };
+            
+            let originalPlatformData = [];
+            let originalPlayerPos = { x: 0, y: 0 };
+            let baseCanvasWidth = 800;
+            let baseCanvasHeight = 450;
+            const baseJumpVelocity = -12;
+            const baseGravity = 0.5;
+            const basePlayerVelocity = 5;
+
+            // --- Game State & Logic ---
+            const game = {
+                state: 'LOADING',
+                gravity: baseGravity,
+                jumpVelocity: baseJumpVelocity,
+                player: {
+                    x: 0, y: 0, width: 32, height: 32,
+                    vx: 0, vy: 0,
+                    isGrounded: false,
+                    character: null,
+                },
+                platforms: [],
+                keys: { left: false, right: false, jump: false },
+                lastUpdate: 0,
+                candles: [],
+                micAllowed: false,
+                audioContext: null,
+                analyser: null,
+                volumeThreshold: 50,
+                candlesBlown: 0,
+                animationFrameId: null
+            };
+
+            // --- Game Screen Management ---
+            function showScreen(screenId) {
+                gameOverlay.style.display = 'none';
+                charSelectOverlay.style.display = 'none';
+                quest3Screen.style.display = 'none';
+                finalPopup.style.display = 'none';
+                gameScreen.style.display = 'none';
+                
+                if (game.animationFrameId) {
+                    cancelAnimationFrame(game.animationFrameId);
+                    game.animationFrameId = null;
+                }
+
+                if (screenId === 'START_SCREEN') {
+                    gameOverlay.style.display = 'flex';
+                    game.state = 'START_SCREEN';
+                } else if (screenId === 'CHAR_SELECT') {
+                    charSelectOverlay.style.display = 'flex';
+                    game.state = 'CHAR_SELECT';
+                } else if (screenId === 'PLAYING') {
+                    gameScreen.style.display = 'flex';
+                    game.state = 'PLAYING';
+                    game.lastUpdate = performance.now();
+                    gameLoop(game.lastUpdate);
+                } else if (screenId === 'QUEST3') {
+                    quest3Screen.style.display = 'flex';
+                    game.state = 'QUEST3';
+                    setupCandles();
+                    if (!game.micAllowed) {
+                        setupMicrophone();
+                    }
+                } else if (screenId === 'FINAL_POPUP') {
+                    finalPopup.style.display = 'flex';
+                    game.state = 'FINAL_POPUP';
+                }
+            }
+
+            // --- Game Loop and Updates ---
+            function gameLoop(timestamp) {
+                if (game.state === 'PLAYING') {
+                    const deltaTime = (timestamp - game.lastUpdate) / 1000;
+                    game.lastUpdate = timestamp;
+                    update(deltaTime);
+                    draw();
+                    game.animationFrameId = requestAnimationFrame(gameLoop);
+                }
+            }
+
+            function update(deltaTime) {
+                game.player.vx = 0;
+                const scaleFactorX = canvas.width / baseCanvasWidth;
+                const scaledVelocity = basePlayerVelocity * scaleFactorX;
+
+                if (game.keys.left) {
+                    game.player.vx = -scaledVelocity;
+                }
+                if (game.keys.right) {
+                    game.player.vx = scaledVelocity;
+                }
+                game.player.x += game.player.vx;
+
+                const scaleFactorY = canvas.height / baseCanvasHeight;
+                game.gravity = baseGravity * scaleFactorY;
+                game.jumpVelocity = baseJumpVelocity * scaleFactorY;
+
+                game.player.vy += game.gravity;
+                game.player.y += game.player.vy;
+
+                if (game.keys.jump && game.player.isGrounded) {
+                    game.player.vy = game.jumpVelocity;
+                    game.player.isGrounded = false;
+                    game.keys.jump = false;
+                }
+
+                game.player.isGrounded = false;
+                for (const platform of game.platforms) {
+                    if (isColliding(game.player, platform)) {
+                        if (game.player.vy >= 0 && game.player.y + game.player.height <= platform.y + game.player.vy) {
+                            game.player.y = platform.y - game.player.height;
+                            game.player.vy = 0;
+                            game.player.isGrounded = true;
+
+                            if (game.platforms.indexOf(platform) === 3) {
+                                showScreen('QUEST3');
+                            }
+                        }
+                    }
+                }
+
+                if (game.player.x < 0) {
+                    game.player.x = 0;
+                }
+                if (game.player.x + game.player.width > canvas.width) {
+                    game.player.x = canvas.width - game.player.width;
+                }
+                
+                if (game.player.y > canvas.height) {
+                    showScreen('START_SCREEN');
+                    overlayTitle.textContent = 'GAME OVER';
+                    startButton.textContent = 'PLAY AGAIN';
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#3a3a5e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const patternCanvas = document.createElement('canvas');
+                patternCanvas.width = 16;
+                patternCanvas.height = 16;
+                const patternCtx = patternCanvas.getContext('2d');
+                patternCtx.fillStyle = '#2b2b4d';
+                patternCtx.fillRect(0, 0, 16, 16);
+                patternCtx.fillStyle = '#4f4f7d';
+                patternCtx.fillRect(0, 0, 8, 8);
+                patternCtx.fillRect(8, 8, 8, 8);
+                const pattern = ctx.createPattern(patternCanvas, 'repeat');
+                ctx.fillStyle = pattern;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                for (const platform of game.platforms) {
+                    ctx.fillStyle = '#D1D5DB';
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                }
+
+                const playerImage = characterImages[game.player.character];
+                if (playerImage) {
+                    ctx.drawImage(playerImage, game.player.x, game.player.y, game.player.width, game.player.height);
+                } else {
+                    ctx.fillStyle = game.player.character === 'ranni' ? '#FACC15' : '#4f4f7d';
+                    ctx.fillRect(game.player.x, game.player.y, game.player.width, game.player.height);
+                }
+            }
+
+            // --- Game Screens ---
+            function setupGame() {
+                game.player.x = game.platforms[0].x + (game.platforms[0].width / 2) - (game.player.width / 2);
+                game.player.y = game.platforms[0].y - game.player.height;
+                game.player.vy = 0;
+                game.player.vx = 0;
+                game.player.isGrounded = true;
+
+                originalPlayerPos.x = game.player.x - game.platforms[0].x;
+                originalPlayerPos.y = game.player.y - game.platforms[0].y;
+            }
+            
+            function setupPlatforms() {
+                const scaleX = canvas.width / baseCanvasWidth;
+                const scaleY = canvas.height / baseCanvasHeight;
+
+                game.platforms = [
+                    { x: canvas.width / 2 - 100 * scaleX, y: canvas.height - 50 * scaleY, width: 200 * scaleX, height: 20 * scaleY, isStart: true },
+                    { x: canvas.width / 4 - 50 * scaleX, y: canvas.height - 150 * scaleY, width: 150 * scaleX, height: 20 * scaleY },
+                    { x: canvas.width * 3 / 4 - 100 * scaleX, y: canvas.height - 250 * scaleY, width: 150 * scaleX, height: 20 * scaleY },
+                    { x: canvas.width / 2 - 100 * scaleX, y: canvas.height - 350 * scaleY, width: 200 * scaleX, height: 20 * scaleY }
+                ];
+                
+                if (originalPlatformData.length === 0) {
+                    originalPlatformData = game.platforms.map(p => ({
+                        x: p.x,
+                        y: p.y,
+                        width: p.width,
+                        height: p.height
+                    }));
+                }
+            }
+
+            function isColliding(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                        rect1.x + rect1.width > rect2.x &&
+                        rect1.y < rect2.y + rect2.height &&
+                        rect1.y + rect1.height > rect2.y;
+            }
+
+            // --- Candle Quest Logic ---
+            function setupCandles() {
+                game.candlesBlown = 0;
+                const candleContainer = document.getElementById('candle-container');
+                const cakeImageElement = document.getElementById('cake-image');
+                
+                cakeImageElement.src = cakeImage.src;
+                
+                candleContainer.innerHTML = '';
+                
+                game.candles = [];
+                
+                // Fixed positions for candles based on the provided image
+                // Adjusted the first candle's position to be lower
+                const candlePositions = [
+                    { x: 10, y: 40 }, { x: 20, y: 25 }, { x: 30, y: 15 }, { x: 40, y: 10 }, { x: 50, y: 10 }, { x: 60, y: 15 }, { x: 70, y: 25 }, { x: 80, y: 35 },
+                    { x: 15, y: 50 }, { x: 25, y: 40 }, { x: 35, y: 30 }, { x: 45, y: 20 }, { x: 55, y: 20 }, { x: 65, y: 30 }, { x: 75, y: 40 },
+                    { x: 20, y: 65 }, { x: 30, y: 55 }, { x: 40, y: 45 }, { x: 50, y: 40 }, { x: 60, y: 45 }, { x: 70, y: 55 }, { x: 80, y: 65 },
+                    { x: 30, y: 75 }, { x: 40, y: 70 }, { x: 50, y: 65 }, { x: 60, y: 70 }, { x: 70, y: 75 }
+                ];
+
+                for (const pos of candlePositions) {
+                    const candleWrapper = document.createElement('div');
+                    candleWrapper.classList.add('candle-wrapper');
+
+                    const candleBody = document.createElement('img');
+                    candleBody.src = candleBodyImage.src;
+                    candleBody.classList.add('candle');
+                    
+                    const candleFlame = document.createElement('img');
+                    candleFlame.src = candleFlameImage.src;
+                    candleFlame.classList.add('candle-flame');
+
+                    candleWrapper.appendChild(candleBody);
+                    candleWrapper.appendChild(candleFlame);
+                    
+                    candleWrapper.style.left = `${pos.x}%`;
+                    candleWrapper.style.top = `${pos.y}%`;
+
+                    candleContainer.appendChild(candleWrapper);
+                    game.candles.push(candleWrapper);
+                }
+            }
+
+            async function setupMicrophone() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    game.micAllowed = true;
+                    game.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = game.audioContext.createMediaStreamSource(stream);
+                    game.analyser = game.audioContext.createAnalyser();
+                    game.analyser.fftSize = 256;
+                    source.connect(game.analyser);
+                    
+                    checkVolume();
+                } catch (err) {
+                    volumeBar.style.width = '0%';
+                    console.error('Microphone access error:', err);
+                }
+            }
+
+            function checkVolume() {
+                if (game.state !== 'QUEST3' || !game.micAllowed) return;
+
+                const dataArray = new Uint8Array(game.analyser.fftSize);
+                game.analyser.getByteFrequencyData(dataArray);
+
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                const averageVolume = sum / dataArray.length;
+
+                const volumePercentage = Math.min((averageVolume / 256) * 100, 100);
+                volumeBar.style.width = `${volumePercentage}%`;
+
+                if (averageVolume > game.volumeThreshold) {
+                    for (const candle of game.candles) {
+                        if (!candle.classList.contains('blown')) {
+                            candle.classList.add('blown');
+                            game.candlesBlown++;
+                            break;
+                        }
+                    }
+
+                    if (game.candlesBlown >= game.candles.length) {
+                        showScreen('FINAL_POPUP');
+                    }
+                }
+                
+                requestAnimationFrame(checkVolume);
+            }
+
+            // --- Event Listeners ---
+            startButton.addEventListener('click', () => {
+                showScreen('CHAR_SELECT');
+            });
+            
+            ranniCard.addEventListener('click', () => {
+                game.player.character = 'ranni';
+                setupPlatforms();
+                setupGame();
+                showScreen('PLAYING');
+            });
+
+            potetoCard.addEventListener('click', () => {
+                game.player.character = 'poteto';
+                setupPlatforms();
+                setupGame();
+                showScreen('PLAYING');
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (game.state === 'PLAYING') {
+                    switch (e.key.toLowerCase()) {
+                        case 'arrowleft':
+                        case 'a':
+                            game.keys.left = true;
+                            break;
+                        case 'arrowright':
+                        case 'd':
+                            game.keys.right = true;
+                            break;
+                        case ' ':
+                        case 'w':
+                        case 'arrowup':
+                            game.keys.jump = true;
+                            break;
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (game.state === 'PLAYING') {
+                    switch (e.key.toLowerCase()) {
+                        case 'arrowleft':
+                        case 'a':
+                            game.keys.left = false;
+                            break;
+                        case 'arrowright':
+                        case 'd':
+                            game.keys.right = false;
+                            break;
+                    }
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
